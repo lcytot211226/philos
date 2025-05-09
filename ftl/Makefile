@@ -2,7 +2,7 @@ CC = gcc
 CFLAGS = -Wall -Wextra -g
 
 TARGET = ftl
-SRCS = main.c init.c write.c
+SRCS = main.c init.c write.c GC.c
 
 OBJS = $(SRCS:.c=.o)
 

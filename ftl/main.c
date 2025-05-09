@@ -2,25 +2,22 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-FTL ftl;
-byte8 totalReq = 0, writeReq = 0;
+void print(FTL *FTLptr) {
+    for(int i=0;i<10;i++) {
+        if(FTLptr->mapTable[i].used) {
+            printf("%d: %d block %d page\n",i , FTLptr->mapTable[i].blockNo, FTLptr->mapTable[i].pageNo);
+        }
+    }
+    
+}
 
-int main(){
+int main() {
+    FTL ftl;
+    byte8 totalReq = 0, writeReq = 0;
+
     FILE *TraceFile, *ConfigFile, *ResultFile;
     char *config_file = "./files/config.txt";
     char *trace_file  = "./files/trace.txt";
-    
-    // BYTE lineBuffer[MAX_BUFFER_SIZE];
-    // char operation[100], buffer[100];
-    // BYTE ResultFileName[100], InitFileName[100], ConfigFileName[100];
-    
-
-    // DWORD sector_nr, len, tag, offset_sector, len_sector, writeReq;
-
-    // writeReq = 0;					
-	// MLCflash.REGION_NUMBER = 1;	
-	// MLCflash.DEMOTE_THRESHOLD = 0xffffffff;
-	// MLCflash.PROMOTE_THRESHOLD = 0;	
 
     printf("Initializing %s ...\n", config_file);
     ConfigFile = fopen(config_file, "r");
@@ -34,8 +31,6 @@ int main(){
     TraceFile = fopen(trace_file, "r");
     // int cnt = 0;
     while(!feof(TraceFile)){
-        // sector_nr = 0;
-        // len = 0;
 
         fgets(buffer, 100, TraceFile);
 
@@ -57,42 +52,23 @@ int main(){
                 sectorNum += 1;
                 len -= 1;
 
+                // threshold for GC
+                if(ftl.FreeList.cnt <= 100) {
+                    GC(&ftl);
+                }
+
                 if(len <= 0)break;
             }
             break;
         }
     } 
     // printf("%lld %lld\n", totalReq, writeReq);
-    printf("%d \n", ftl.mapTable[2].pageNo);
+    
 
 
-    // fclose(traceFile);
+    fclose(TraceFile);
 	// printf("simulation done\n");
 
-	// printf("printing ResultFile\n");
-	// sprintf(ResultFileName,"D:\\SimResultTmp\\(IO)NoSep+Greedy_%s",ConfigFileName);
-
-	// ResultFile = fopen(ResultFileName, "w+t");
-	// printf("user page write = %d\n",MLCflash.stat.userPageWrite);
-	// fprintf(ResultFile,"user page write = %d\n",MLCflash.stat.userPageWrite);
-
-	// //=======page write================================================================================================================
-	// printf("total page write = %d\n",MLCflash.stat.pageWrite);
-	// fprintf(ResultFile,"total page write = %d\n",MLCflash.stat.pageWrite);
-	// //=================================================================================================================================
-
-	// //=======Erase Count===============================================================================================================
-	// printf("totalEC = %lu\n",MLCflash.stat.blockErase);
-	// fprintf(ResultFile,"totalEC = %lu\n",MLCflash.stat.blockErase);
-	// //=================================================================================================================================
-
-	// printf("Max page copy = %d\n",MLCflash.stat.maxCopy);
-	// fprintf(ResultFile,"Max page copy = %d\n",MLCflash.stat.maxCopy);
-
-	// //=======Avg Copy==================================================================================================================
-	// printf("AVG page copy = %f\n",(double)(MLCflash.stat.pageWrite-MLCflash.stat.userPageWrite)/MLCflash.stat.blockErase );
-	// fprintf(ResultFile,"AVG page copy = %f\n",(double)(MLCflash.stat.pageWrite-MLCflash.stat.userPageWrite)/MLCflash.stat.blockErase );
-	// //=================================================================================================================================
-
+    print(&ftl);
     FTLfree(&ftl);
 }

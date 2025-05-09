@@ -57,7 +57,7 @@ void FTLinit(FTL *FTLptr,FILE *fp){
 
 		// reset block
 		FTLptr->blocks[i].eraseCnt = 0;
-		FTLptr->blocks[i].validPagesCnt = 0;
+		FTLptr->blocks[i].validPagesCnt = C->pagesInBlock;
 
 		// reset page
 		for( byte8 j = 0; j < C->pagesInBlock; j++ ) {
@@ -77,8 +77,10 @@ void FTLinit(FTL *FTLptr,FILE *fp){
 	FTLptr->FreeList.tail = C->blocksInP-1;
 	FTLptr->FreeList.cnt  = C->blocksInP;
 	FTLptr->FreeList.usedPage = 0;
-	for( byte8 i = 0; i < C->blocksInP-1 ; i++ )
+	for( byte8 i = 0; i < C->blocksInP-1 ; i++ ) {
 		FTLptr->blocks[i].FreeNext = i+1;
+	}
+		
 	FTLptr->blocks[C->blocksInP-1].FreeNext = -1;
 
 	// table

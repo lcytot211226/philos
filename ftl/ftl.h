@@ -16,8 +16,11 @@ typedef struct {
 typedef struct {
 	Page	*pages;
 	byte4	eraseCnt;
-	byte4	validPagesCnt;	
-	byte4   state; // 0 = free, 1 = writing, 2 = full
+	/* 
+		seen free and valid as same
+		blocks don't exist in FreeList and GCList simultaneously
+	*/
+	byte4	validPagesCnt; 
 
 	byte4	GCNext;
 	byte4   GCPrev;

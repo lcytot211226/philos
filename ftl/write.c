@@ -37,18 +37,75 @@ void writeSector(FTL *FTLptr, byte8 sectorNum) {
 }
 
 void markPageInvalid(FTL *FTLptr, Table *entry) {
-    FTLptr->blocks[entry->blockNo].pages[entry->pageNo].state = 2;
-    FTLptr->blocks[entry->blockNo].validPagesCnt--;
+    byte4 block_no = entry->blockNo;
+    Block *block = &(FTLptr->blocks[block_no]);
+    
+    // update GCList
+    // exclude freelist block
+    if(entry->blockNo != FTLptr->FreeList.head) {
+        if(FTLptr->GCList[block->validPagesCnt].cnt > 1) {
+            if       (block_no == FTLptr->GCList[block->validPagesCnt].head) {
+                FTLptr->GCList[block->validPagesCnt].head = block->GCNext;
+
+            } else if(block_no == FTLptr->GCList[block->validPagesCnt].tail) {
+                FTLptr->GCList[block->validPagesCnt].tail = block->GCPrev;
+
+            } else {
+                FTLptr->blocks[block->GCNext].GCPrev = block->GCPrev;
+                FTLptr->blocks[block->GCPrev].GCNext = block->GCNext;
+            }
+            
+        }
+        FTLptr->GCList[block->validPagesCnt].cnt--;
+        block->validPagesCnt--;
+        // add to GCList[k-1]
+        if(FTLptr->GCList[block->validPagesCnt].cnt == 0) {
+            FTLptr->GCList[block->validPagesCnt].head = block_no;
+            FTLptr->GCList[block->validPagesCnt].tail = block_no;
+        } else {
+            byte4 tail_block_no = FTLptr->GCList[block->validPagesCnt].tail;
+            Block *tail_block = &(FTLptr->blocks[tail_block_no]);
+
+            block->GCPrev = tail_block_no;
+            tail_block->GCNext = block_no;
+
+            FTLptr->GCList[block->validPagesCnt].tail = block_no;
+        }
+    } else {
+        block->validPagesCnt--;
+    }
 
 }
 
 void WriteBufferToNewPage(FTL *FTLptr, byte4 *newPageNo, byte4 *newBlockNo) {
+    // choose Freelist head
     *newBlockNo = FTLptr->FreeList.head;
     *newPageNo  = FTLptr->FreeList.usedPage;
     FTLptr->FreeList.usedPage++;
     if(FTLptr->FreeList.usedPage >= FTLptr->config.pagesInBlock) {
+
+        byte4 block_no = FTLptr->FreeList.head;
+        Block *block = &(FTLptr->blocks[block_no]);
+
+        if(FTLptr->GCList[block->validPagesCnt].cnt == 0) {
+            FTLptr->GCList[block->validPagesCnt].head = block_no;
+            FTLptr->GCList[block->validPagesCnt].tail = block_no;
+        } else {
+            byte4 tail_block_no = FTLptr->GCList[block->validPagesCnt].tail;
+            Block *tail_block = &(FTLptr->blocks[tail_block_no]);
+
+            block->GCPrev = tail_block_no;
+            tail_block->GCNext = block_no;
+
+            FTLptr->GCList[block->validPagesCnt].tail = block_no;
+        }
+
+        FTLptr->FreeList.cnt--;
         FTLptr->FreeList.usedPage = 0;
-        FTLptr->FreeList.head = FTLptr->blocks[FTLptr->FreeList.head].FreeNext;
+        FTLptr->FreeList.head = block->FreeNext;
+
+
+        
     }
         
 }
