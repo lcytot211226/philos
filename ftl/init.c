@@ -58,7 +58,6 @@ void FTLinit(FTL *FTLptr,FILE *fp){
 		// reset block
 		FTLptr->blocks[i].eraseCnt = 0;
 		FTLptr->blocks[i].validPagesCnt = C->pagesInBlock;
-
 		// reset page
 		for( byte8 j = 0; j < C->pagesInBlock; j++ ) {
 			FTLptr->blocks[i].pages[j].state = 0;
@@ -67,8 +66,8 @@ void FTLinit(FTL *FTLptr,FILE *fp){
 	}
 	
 	// GClist
-	FTLptr->GCList = (List *) calloc(C->pagesInBlock, sizeof(List));
-	for( byte8 i = 0; i < C->pagesInBlock; i++ ) 
+	FTLptr->GCList = (List *) calloc(C->pagesInBlock+1, sizeof(List));
+	for( byte8 i = 0; i <= C->pagesInBlock; i++ ) 
 		FTLptr->GCList[i].cnt = 0;
 	
 
@@ -80,8 +79,6 @@ void FTLinit(FTL *FTLptr,FILE *fp){
 	for( byte8 i = 0; i < C->blocksInP-1 ; i++ ) {
 		FTLptr->blocks[i].FreeNext = i+1;
 	}
-		
-	FTLptr->blocks[C->blocksInP-1].FreeNext = -1;
 
 	// table
 	FTLptr->mapTable = (Table*) calloc(C->LSize / C->pageSize, sizeof(Table));
@@ -89,9 +86,12 @@ void FTLinit(FTL *FTLptr,FILE *fp){
 		FTLptr->mapTable[i].used = 0;
 
 	// writebuf
-	// FTLptr->writeBuf.usedSector = (byte1 *) calloc(C->sectorsInPage, sizeof(byte1));
-	// FTLptr->writeBuf.usedNum    = 0;
 	FTLptr->writeBuf.currentPage = FTL_NULL;
+
+	// data
+	FTLptr->recordData.actualWrite = 0;
+	FTLptr->recordData.hostWrite = 0;
+	FTLptr->recordData.eraseTimes = 0;
 }
 
 void FTLfree(FTL *FTLptr){

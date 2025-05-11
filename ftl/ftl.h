@@ -10,6 +10,7 @@ typedef unsigned char	byte1;
 
 typedef struct { 
 	// byte8	sectors;
+	byte8   LPage;
 	byte4	state; // 0 = free, 1 = valid, 2 = invalid
 } Page;
 
@@ -64,15 +65,19 @@ typedef struct {
 } Config;
 
 typedef struct {
+	byte8 actualWrite;
+	byte8 hostWrite;
+	byte8 eraseTimes; // block
+} Data;
+
+typedef struct {
 	Config   config;
 	Block    *blocks;
 	List     *GCList;
 	List     FreeList;
 	Table    *mapTable;
 	WriteBuf writeBuf;
-
-
-
+	Data     recordData;
 } FTL; 
 
 

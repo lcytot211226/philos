@@ -1,6 +1,7 @@
 #include "ftl.h"
 #include <stdlib.h>
 #include <stdio.h>
+#include <assert.h>
 
 void writeSector(FTL *FTLptr, byte8 sectorNum) {
     
@@ -9,37 +10,44 @@ void writeSector(FTL *FTLptr, byte8 sectorNum) {
     Table *maptable = (FTLptr->mapTable);
 
     byte8 LPageNo = sectorNum / C->sectorsInPage;
-    byte4 LSectorNo = sectorNum % C->sectorsInPage;
+    // byte4 LSectorNo = sectorNum % C->sectorsInPage;
 
     // need to write buffer to new posi
     if (wbuf->currentPage != FTL_NULL && wbuf->currentPage != LPageNo) { 
-        
-        // mark old Ppage as invalid
-        if(maptable[wbuf->currentPage].used) {
-            markPageInvalid(FTLptr, &maptable[wbuf->currentPage]);
-        } 
-        
-        byte4 newPageNo, newBlockNo;
-
-        // write buffer to new page
-        WriteBufferToNewPage(FTLptr, &newPageNo, &newBlockNo);
-        // printf("%d\n", newPageNo);
-        // update mapping table
-        maptable[wbuf->currentPage].pageNo = newPageNo;
-        maptable[wbuf->currentPage].blockNo = newBlockNo;
-        maptable[wbuf->currentPage].used = 1;
-
-        // copy data from LPageNo to buffer
-        // negelect...
+        flushBuffer(FTLptr);
     }
     wbuf->currentPage = LPageNo;
 
 }
 
+void flushBuffer(FTL *FTLptr) {
+    Table *maptable = FTLptr->mapTable;
+    WriteBuf *wbuf = &FTLptr->writeBuf;
+    // mark old Ppage as invalid
+    if(maptable[wbuf->currentPage].used == 1) {
+        markPageInvalid(FTLptr, &maptable[wbuf->currentPage]);
+    } 
+    
+    byte4 newPageNo, newBlockNo;
+
+    // write buffer to new page
+    WriteNewPage(FTLptr, &newPageNo, &newBlockNo);
+    // printf("%d\n", newPageNo);
+    // update mapping table
+    FTLptr->blocks[newBlockNo].pages[newPageNo].LPage = wbuf->currentPage;
+
+    maptable[wbuf->currentPage].pageNo = newPageNo;
+    maptable[wbuf->currentPage].blockNo = newBlockNo;
+    maptable[wbuf->currentPage].used = 1;
+}
+
 void markPageInvalid(FTL *FTLptr, Table *entry) {
     byte4 block_no = entry->blockNo;
     Block *block = &(FTLptr->blocks[block_no]);
+    // assert(block->validPagesCnt != 0);
     
+    block->pages[entry->pageNo].state = 2;
+
     // update GCList
     // exclude freelist block
     if(entry->blockNo != FTLptr->FreeList.head) {
@@ -71,17 +79,22 @@ void markPageInvalid(FTL *FTLptr, Table *entry) {
 
             FTLptr->GCList[block->validPagesCnt].tail = block_no;
         }
+        FTLptr->GCList[block->validPagesCnt].cnt++;
     } else {
         block->validPagesCnt--;
     }
 
 }
 
-void WriteBufferToNewPage(FTL *FTLptr, byte4 *newPageNo, byte4 *newBlockNo) {
+void WriteNewPage(FTL *FTLptr, byte4 *newPageNo, byte4 *newBlockNo) {
+    FTLptr->recordData.actualWrite++;
     // choose Freelist head
     *newBlockNo = FTLptr->FreeList.head;
     *newPageNo  = FTLptr->FreeList.usedPage;
+    assert(FTLptr->blocks[*newBlockNo].pages[*newPageNo].state==0);
+    FTLptr->blocks[*newBlockNo].pages[*newPageNo].state = 1;
     FTLptr->FreeList.usedPage++;
+
     if(FTLptr->FreeList.usedPage >= FTLptr->config.pagesInBlock) {
 
         byte4 block_no = FTLptr->FreeList.head;
@@ -99,13 +112,12 @@ void WriteBufferToNewPage(FTL *FTLptr, byte4 *newPageNo, byte4 *newBlockNo) {
 
             FTLptr->GCList[block->validPagesCnt].tail = block_no;
         }
+        FTLptr->GCList[block->validPagesCnt].cnt++;
 
         FTLptr->FreeList.cnt--;
         FTLptr->FreeList.usedPage = 0;
         FTLptr->FreeList.head = block->FreeNext;
 
-
-        
     }
         
 }
