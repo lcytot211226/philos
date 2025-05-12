@@ -62,6 +62,7 @@ typedef struct {
 	byte8   pagesInBlock;     // pages in block
 	byte8   sectorsInPage;    // 
 
+	byte1 	isActualWrite;
 } Config;
 
 typedef struct {

@@ -18,7 +18,7 @@ int main() {
     FTL ftl;
 
     FILE *TraceFile, *ConfigFile, *ResultFile;
-    char *config_file = "./files/config.txt";
+    char *config_file = "./files/2k128k16g204M.txt";
     char *trace_file  = "./files/rawfile0_20G.txt";
 
     printf("Initializing %s ...\n", config_file);
@@ -36,8 +36,8 @@ int main() {
     // fill logical size
     sectorNum = 0;
     len = 33554432; // 16G / 512B
+    ftl.config.isActualWrite = 0;
     while(len > 0){
-        ftl.recordData.hostWrite++;
         writeSector(&ftl, sectorNum);
         sectorNum += 1;
         len -= 1;
@@ -61,6 +61,7 @@ int main() {
     printf("Start %s ...\n", trace_file);
     // start for consume trace
     cnt = 0;
+    ftl.config.isActualWrite = 1;
     while(!feof(TraceFile)){
         cnt++;
     //     if(cnt>209900) {
@@ -119,7 +120,7 @@ int main() {
            "actual  write: %lld bytes\n"
            "amplification: %.6f\n"
            , ftl.recordData.hostWrite, ftl.recordData.actualWrite
-           , (double)ftl.recordData.actualWrite / (double)ftl.recordData.hostWrite -1);
+           , (double)ftl.recordData.actualWrite / (double)ftl.recordData.hostWrite);
 
     
         

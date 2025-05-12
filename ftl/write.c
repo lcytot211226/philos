@@ -21,6 +21,7 @@ void writeSector(FTL *FTLptr, byte8 sectorNum) {
 }
 
 void flushBuffer(FTL *FTLptr) {
+    if(FTLptr->config.isActualWrite == 1) FTLptr->recordData.actualWrite++;
     Table *maptable = FTLptr->mapTable;
     WriteBuf *wbuf = &FTLptr->writeBuf;
     // mark old Ppage as invalid
@@ -87,7 +88,6 @@ void markPageInvalid(FTL *FTLptr, Table *entry) {
 }
 
 void WriteNewPage(FTL *FTLptr, byte4 *newPageNo, byte4 *newBlockNo) {
-    FTLptr->recordData.actualWrite++;
     // choose Freelist head
     *newBlockNo = FTLptr->FreeList.head;
     *newPageNo  = FTLptr->FreeList.usedPage;

@@ -82,6 +82,7 @@ void FTLinit(FTL *FTLptr,FILE *fp){
 
 	// table
 	FTLptr->mapTable = (Table*) calloc(C->LSize / C->pageSize, sizeof(Table));
+	assert(FTLptr->mapTable != NULL);
 	for( byte8 i = 0; i < C->LSize / C->pageSize; i++ )
 		FTLptr->mapTable[i].used = 0;
 

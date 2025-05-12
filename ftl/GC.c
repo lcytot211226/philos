@@ -57,7 +57,8 @@ void getVictim(FTL *FTLptr, byte8 *victimBlock) {
     }
 }
 
-void GCMovePage(FTL *FTLptr, byte4 *oldBlock, byte4 *oldPage) {        
+void GCMovePage(FTL *FTLptr, byte4 *oldBlock, byte4 *oldPage) {
+    if(FTLptr->config.isActualWrite == 1) FTLptr->recordData.actualWrite++;      
     byte8 LPageNo =  FTLptr->blocks[*oldBlock].pages[*oldPage].LPage;
     FTLptr->blocks[*oldBlock].pages[*oldPage].state = 2;
 
